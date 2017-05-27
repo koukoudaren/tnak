@@ -1,0 +1,283 @@
+package tank;
+import javax.swing.*;
+
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+import java.io.*;
+import javax.imageio.ImageIO;
+public class tank1 extends JFrame//面向对象的方法主要是便于维护以及实现可扩展性，先建好框架在往里面添加功能是一个比较好的的思路，下面我将要在每个类之前说名相关的思路。
+{
+	myPanel mb=null;
+	public static void main(String[] args)
+	{
+		tank1 kk=new tank1();
+	}
+	public tank1()//这里必须是一个有返回的函数，
+	{
+		mb=new myPanel();
+		this.add(mb);     //在子类中调用父类的方法，直接用this.函数名就可以
+		this.addKeyListener(mb);
+
+		this.setSize(400,300);
+		this.setLocation(300,280);
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);//设置用户在发起窗口close的时候默认自动执行的操作
+		//this.setDefaultLookAndFeelDecorated(boolean defaultLookAndFeelDecorated)
+		//		JFrame frame = new JFrame();
+		//	    frame.setUndecorated(true);
+		//	    frame.getRootPane().setWindowDecorationStyle(JRootPane.FRAME);
+		//this.setResizable(false);
+		this.setVisible(true);
+		Thread t1=new Thread(mb);
+		t1.start();
+	}
+}
+
+
+
+
+
+class myPanel extends JPanel implements KeyListener,Runnable//复习一下，JPanel为面板，这里主要是定义一个画板
+{
+
+	myTank mt=null;
+	diTank dt=null;
+	ziDan zd=null;
+	Vector<diTank> dtk=new Vector<diTank>();//当所有的对象都由用户自己控制的时候用单线程，存在随机就用多线程即Vector
+	Vector<baoZha> bzjh=new Vector<baoZha>();//爆炸集合
+	int tksl=4;
+	
+	Image p1=null;
+	Image p2=null;
+	Image p3=null;
+	
+
+	public myPanel(){
+		mt=new myTank(140,232);//我的坦克的对象
+
+		for(int i=0;i<tksl;i++){
+			
+			dt=new diTank((i)*180+5,10);//传入的是敌人坦克的起始坐标，目的是产生三个坦克
+			Thread t2=new Thread(dt);
+			t2.start();
+			ziDan zd=new ziDan(dt.x+10,dt.y+30,2);
+			dt.dzd.add(zd);
+			Thread t3=new Thread(zd);
+			t3.start();
+			dtk.add(dt);//并将三个坦克加入到集合类之中
+
+		}
+		p1=Toolkit.getDefaultToolkit().getImage(Panel.class.getResource("/bzxg1.gif"));
+		p2=Toolkit.getDefaultToolkit().getImage(Panel.class.getResource("/bzxg2.gif"));
+		p3=Toolkit.getDefaultToolkit().getImage(Panel.class.getResource("/bzxg3.gif"));
+
+	}
+
+	public void paint(Graphics g){
+		super.paint(g);
+		g.fillRect(0,0,400,300);
+		Thread t=new Thread(dt);
+		t.start();
+		
+		
+		
+		
+	//*******画我的坦克以及子弹
+		this.drawTank(mt.getX(),mt.getY(),g,mt.fangxiang,0);//这里与myTank类中的坐标形成呼应，myTank再将坐标值传入到Tank中去
+		for(int i=0;i<mt.aaa.size();i++)//每次按J就会添加一个子弹的对象，这样每次绘制子弹就是绘制一个新的子弹而不是上一个子弹的重绘
+		{
+			ziDan zd=mt.aaa.get(i);
+			if(zd!=null&&zd.shengming==true)//如果等于null，子弹将会连续无限发射成一条子弹线
+			{
+				g.setColor(Color.white);
+				g.fill3DRect(zd.x,zd.y,3,3,false);//这里不可以用mt.zd.x.............这样会的导致子弹没有办法连续发射
+
+			}
+			if(zd.shengming==false){
+				mt.aaa.remove(zd);//这样做可以让游戏区的子弹有限制但又不影响总的子弹数量
+			}
+			
+		}
+		
+		
+		
+		
+		
+		
+		//******画敌人的坦克以及子弹
+		for(int i=0;i<dtk.size()-1;i++)
+		{
+			diTank dt=dtk.get(i);
+			if(dt.shengming)
+			{
+				this.drawTank(dt.getX(),dt.getY(),g,dt.fangxiang,1);//画敌人的坦克
+				for(int j=0;j<dt.dzd.size();j++)
+				{
+					ziDan dtzd=dt.dzd.get(j);
+					if(dtzd.shengming)
+					{
+						g.setColor(Color.white);//画敌人坦克的子弹
+						g.fill3DRect(dtzd.x,dtzd.y,3,3,false);
+					}else{
+						
+						dt.dzd.remove(dtzd);
+					}
+				}
+			}			
+		}		
+		
+		for(int i=0;i<bzjh.size();i++)//爆炸三连
+		{
+			baoZha bz=bzjh.get(i);
+			
+			if(bz.shengcunqi>6)
+			{
+				g.drawImage(p1,bz.x,bz.y,30,30,this);
+				
+			}else if(bz.shengcunqi>3)
+			{
+				g.drawImage(p2,bz.x,bz.y,30,30,this);
+			}else
+			{
+				g.drawImage(p3,bz.x,bz.y,30,30,this);
+			}
+			bz.suqsd();
+			if(bz.shengcunqi==0)
+			{
+				bzjh.remove(bz);//当爆炸结束时，去除爆对象，即不再去绘制爆炸效果
+			}		
+		}
+	}
+	public void jzdf(ziDan zd,diTank dt)
+	{
+		switch(dt.fangxiang){
+		case 0:
+		case 3:
+			if(zd.x>dt.x&&zd.x<dt.x+20&&zd.y>dt.y&&zd.y<dt.y+30){
+				zd.shengming=false;
+				dt.shengming=false;
+				baoZha bz=new baoZha(dt.x,dt.y);
+				bzjh.add(bz);
+			}
+			break;
+		case 1:
+		case 4:
+			if(zd.x>dt.x&&zd.x<dt.x+30&&zd.y>dt.y&&zd.y<dt.y+30)
+			{
+				zd.shengming=false;
+				dt.shengming=false;
+				baoZha bz=new baoZha(dt.x,dt.y);
+				bzjh.add(bz);
+			}
+			break;
+		}
+	}
+
+	public void drawTank(int x,int y,Graphics g,int fangxiang,int leixing){
+		switch(leixing)
+		{
+		case 0://我的坦克
+			g.setColor(Color.GREEN);
+			break;
+		case 1://敌人的坦克
+			g.setColor(Color.RED);
+			break;
+		}
+		switch(fangxiang)
+		{
+		case 0://坦克朝上
+			g.fill3DRect(x,y,5,30,false);
+			g.fill3DRect(x+15,y,5,30,false);
+			g.fill3DRect(x+5,y+5,10,20,false);
+			g.setColor(Color.CYAN);
+			g.fillOval(x+4,y+10,10,10);
+			g.drawLine(x+9,y+15,x+9,y-3);
+			break;
+		case 1://坦克朝左
+			g.fill3DRect(x,y,30,5,false);
+			g.fill3DRect(x,y+15,30,5,false);
+			g.fill3DRect(x+5,y+5,20,10,false);
+			g.setColor(Color.PINK);
+			g.fillOval(x+10,y+4,10,10);
+			g.drawLine(x+10,y+9,x-8,y+9);
+
+			break;
+
+		case 2://坦克朝右
+			g.fill3DRect(x,y,30,5,false);
+			g.fill3DRect(x,y+15,30,5,false);
+			g.fill3DRect(x+5,y+5,20,10,false);
+			g.setColor(Color.YELLOW);
+			g.fillOval(x+10,y+4,10,10);
+			g.drawLine(x+10,y+9,x+38,y+9);
+			break;
+		case 3://坦克朝下
+			g.fill3DRect(x,y,5,30,false);
+			g.fill3DRect(x+15,y,5,30,false);
+			g.fill3DRect(x+5,y+5,10,20,false);
+			g.setColor(Color.blue);
+			g.fillOval(x+4,y+10,10,10);
+			g.drawLine(x+9,y+15,x+9,y+40);
+			break;
+		}
+		this.repaint();//每次户外一次坦克都要重绘，否则坦克不走
+	}
+
+
+
+	public void keyTyped(KeyEvent e){}//谨记着三个函数的第一个英文为小写keyTyped
+	public void keyReleased(KeyEvent e){}
+	public void keyPressed(KeyEvent e){
+		if(e.getKeyCode()==KeyEvent.VK_W)
+		{
+			this.mt.setFangxiang(0);
+			this.mt.up();
+		}else if(e.getKeyCode()==KeyEvent.VK_A)
+		{
+			this.mt.setFangxiang(1);
+			this.mt.left();
+		}else if(e.getKeyCode()==KeyEvent.VK_D)
+		{
+			this.mt.setFangxiang(2);
+			this.mt.right();
+		}else if(e.getKeyCode()==KeyEvent.VK_S){
+			this.mt.setFangxiang(3);
+			this.mt.down();
+		}
+		if(e.getKeyCode()==KeyEvent.VK_J)
+		{
+			if(this.mt.aaa.size()<8)//设置容器能储存的子弹数量是八个，挡子弹超出游戏区就会被容器移除
+			{
+				this.mt.fszd();
+			}
+
+		}
+		this.repaint();
+	}
+	public void run()
+	{
+		while(true){
+			try{
+				Thread.sleep(100);//间隔100毫秒再去重绘，因为一个界面占用的内存很大，时间的间隔是为了等待上一个界面结束在去重新绘图
+			}catch(Exception e){
+			}
+
+
+			for(int i=0;i<mt.aaa.size();i++)
+			{//二层循环的目的是让每一颗子弹都与敌人的坦克进行比较
+				ziDan zd=mt.aaa.get(i);
+				if(zd.shengming)
+				{
+					for(int j=0;j<dtk.size();j++)//在这里犯了一次错误，错在将变量j写成i
+					{
+						diTank dt=dtk.get(j);
+						if(dt.shengming){
+							this.jzdf(zd,dt);
+						}
+					}
+				}
+				this.repaint();
+			}
+		}
+	}
+}
