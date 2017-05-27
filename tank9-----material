@@ -1,0 +1,254 @@
+package tank;
+import java.util.*;
+import java.io.*;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.SourceDataLine;
+
+class Tank//这个坦克类中包含所有坦克共同的属性，以方便调用
+{
+	int x=0,y=0;
+	int fangxiang=0;//在设置敌人的坦克的方向时有用
+	int sudu=10;
+	int color;
+	boolean shengming=true;
+	public int getFangxiang() 
+	{
+		return fangxiang;
+	}
+
+	public void setFangxiang(int fangxiang)
+	{
+		this.fangxiang = fangxiang;
+	}
+
+	public int getSudu()
+	{
+		return sudu;
+	}
+
+	public void setSudu(int sudu)
+	{
+		this.sudu = sudu;
+	}
+
+	public int getX()
+	{
+		return x;
+	}
+
+	public void setX(int x) 
+	{
+		this.x = x;
+	}
+
+	public int getY()
+	{
+		return y;
+	}
+
+	public void setY(int y) 
+	{
+		this.y = y;
+	}
+	public Tank(int x,int y)
+	{//初始化坐标
+		this.x=x;
+		this.y=y;
+	}
+
+}
+//继承的必要性，我的坦克里面与坦克类不一样的就可以通过重写来进行调试
+class myTank extends Tank//子弹是跟着坦克走的，子弹的功能大多都和坦克类有关
+{
+	Vector<ziDan>aaa=new Vector<ziDan>();
+	ziDan zd=null;
+
+	public myTank(int x,int y)
+	{
+		super(x,y);//将坐标传进来，时为了进行绘画
+	}
+
+	public void fszd(){//发射子弹的方法
+		switch(this.fangxiang)
+		{
+		case 0:
+			zd=new ziDan(x+8,y-2,0);
+			aaa.add(zd);//每次启动都会添加一个子弹到集合类中以便进行绘制
+			break;
+		case 1:
+			zd=new ziDan(x-10,y+8,1);
+			aaa.add(zd);
+			break;
+		case 2:
+			zd=new ziDan(x+35,y+8,2);
+			aaa.add(zd);
+			break;
+		case 3:
+			zd=new ziDan(x+8,y+40,3);
+			aaa.add(zd);
+			break;
+		}
+		Thread t=new Thread(zd);
+		t.start();
+	}
+
+
+
+	public void up()
+	{
+		y-=sudu;
+	}
+	public void down()
+	{
+		y+=sudu;
+	}
+	public void left()
+	{
+		x-=sudu;
+	}
+	public void right()
+	{
+		x+=sudu;
+	}
+}
+class diTank extends Tank implements Runnable
+{//敌人的坦克
+	int sudu=1;
+	public diTank(int x,int y)
+	{
+		super(x,y);
+	}
+	public void run()
+	{
+		while(true)
+		{
+			this.fangxiang=(int)(Math.random()*4);//随机出现0到3之间的数字之间的整数
+			switch(this.fangxiang)
+			{
+			case 0:
+				for(int i=0;i<30;i++)
+				{
+				y-=sudu;
+				try
+				{
+					Thread.sleep(50);
+				}catch(Exception e){}
+				
+				}
+				break;
+			case 1:
+				for(int i=0;i<30;i++)
+				{
+				x-=sudu;
+				try
+				{
+					Thread.sleep(50);
+				}catch(Exception e){}
+				
+				}
+				break;
+			case 2:
+				for(int i=0;i<30;i++)
+				{
+				x+=sudu;
+				try
+				{
+					Thread.sleep(50);
+				}catch(Exception e){}
+				
+				}
+				break;
+			case 3:
+				for(int i=0;i<30;i++)
+				{
+				y+=sudu;
+				try
+				{
+					Thread.sleep(50);
+				}catch(Exception e){}
+				
+				}
+				break;
+			}
+			
+			this.fangxiang=(int)(Math.random()*4);//随机出现0到3之间的数字之间的整数
+			
+			if(this.shengming==false){
+				break;
+			}
+		}
+	}
+}
+class ziDan implements Runnable
+{//子弹
+	int x;
+	int y;
+	int fangxiang;
+	int sudu=5;
+	boolean shengming=true;
+	public ziDan(int x,int y,int fangxiang)
+	{
+		this.x=x;
+		this.y=y;
+		this.fangxiang=fangxiang;
+	}
+	public void run()//要在Tank类里面运行这个线程
+	{
+		while(true){//凡是线程里面的死循环一般都要加一个睡眠否则线程较多时游戏容易崩溃
+			try{
+				Thread.sleep(50);
+			}catch(Exception e){}
+
+			switch(this.fangxiang)
+			{
+			case 0:
+				y-=sudu;
+				break;
+			case 1:
+				x-=sudu;
+				break;
+			case 2:
+				x+=sudu;
+				break;
+			case 3:
+				y+=sudu;
+				break;
+			}
+			if(x<0||x>400||y<0||y>300){
+				this.shengming=false;
+				break;
+			}
+		}
+	}
+
+}
+class baoZha
+{
+	int x,y;
+	int shengcunqi=9;
+	boolean shengming=true;
+
+	public baoZha(int x,int y)
+	{
+		this.x=x;
+		this.y=y;
+
+	}
+	public void suqsd()
+	{
+		if(shengcunqi>0)
+		{
+			shengcunqi--;
+		}
+		else
+		{
+			this.shengming=false;
+
+		}
+	}
+
+}
+
